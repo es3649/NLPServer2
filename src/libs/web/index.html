@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>NLPServer UI - Home</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+  </head>
+
+  <body>
+    <div class="container" id="root">
+      <div class="row">
+        <div class="col-12">
+          <h1>Welcome to the NLPServer Devpage</h1>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class=col-12>
+          <p>
+            This webpage provides a simple user interface for quickly visualizing functionality of the NLPServer.
+            Input a name, number, and message and click analyze to see the proposed response json.
+            Note that the API is password protected, so a password must also be provided or the request will be denied.
+          </p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 col-md-6">
+          <div class="container">
+
+            <div class="row">
+              <h4>Input Form</h4>
+            </div>
+            <div class="row">
+              <div class="col-4">
+                <label>Name</label><br />
+                <label>Number</label><br />
+                <label>Password</label>
+              </div>
+              <div class="col-6">
+                <input v-model="name" type="text"><br />
+                <input v-model="number" type="tel"><br />
+                <input v-model="password" type="password">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <label for="message-input">Message text</label><br/>
+          </div>
+          <div class="row">
+            <textarea id="message-input" v-model="message"></textarea><br />
+            <!-- <button @click="granular">Granular Analysis</button> -->
+            <button @click="analyze">Analyze</button>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <h4>Response</h4>
+          <p v-if="loading">Loading response...</p>
+          <div v-if="response">
+            <p v-text="response"></p>
+          </div>
+          <div v-else>
+            <p>No result to show</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://bitwiseshiftleft.github.io/sjcl/sjcl.js"></script>
+    <!--dev vuejs-->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!--release vuejs-->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+    <script src="/script.js"></script>
+  </body>
+
+</html>
