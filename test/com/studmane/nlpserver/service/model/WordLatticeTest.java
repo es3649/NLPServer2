@@ -24,7 +24,7 @@ public class WordLatticeTest {
     public void TestWordLatticeGenerator() throws IOException {
         Calendar c = Calendar.getInstance();
 
-        String[] files = {"apptset.lat", "propose.lat", /*"signoff.lat", "correction.lat",*/ "where.lat", /* "reschedule.lat", "when.lat",*/ "yourewelcome.lat"};
+        String[] files = {"apptset.lat", "propose.lat", "signoff.lat", "correction.lat", "where.lat", "reschedule.lat", "when.lat","yourewelcome.lat"};
         // String[] files = {"propose.lat"};
 
         for (String filename : files) {
