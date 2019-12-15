@@ -2,15 +2,11 @@ package com.studmane.nlpserver.service;
 
 import java.util.*;
 
-import com.google.protobuf.Message;
 import com.studmane.nlpserver.service.exception.BadRequestException;
 import com.studmane.nlpserver.service.model.Conversation;
 import com.studmane.nlpserver.service.model.MessageIntent;
 import com.studmane.nlpserver.service.response.MessageResponse;
-import edu.stanford.nlp.ling.CoreAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.time.TimeAnnotations;
 import edu.stanford.nlp.util.ArraySet;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
@@ -55,9 +51,12 @@ public class InformationExtractor {
         case Conversation.STATE_APPT_PROPOSED:
             return updateForApptProposed(annotation, conversation);
         case Conversation.STATE_SET:
+            return updateForApptSet(annotation, conversation);
         case Conversation.STATE_RESCHEDULING:
+            MessageIntent[] arr = {findAffirmativeOrNegative(annotation)};
+            return new ArrayList<>(Arrays.asList(arr));
         case Conversation.STATE_ARCHIVED:
-            return new ArrayList<>();
+            return updateForArchived(annotation);
         default:
             throw new BadRequestException(new MessageResponse("Illegal conversation state: "+conversation.getState()));
         }
@@ -151,6 +150,165 @@ public class InformationExtractor {
     }
 
     /**
+     * Gets the intent based on the annotations assuming we are in the "appt set" state
+     * @param annotation the annotated message to look over
+     * @param conversation the conversation of which this message is a part
+     * @return a list of intents encountered
+     */
+    private List<MessageIntent> updateForApptSet(Annotation annotation, Conversation conversation) {
+        List<MessageIntent> response = new ArrayList<>();
+
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            SemanticGraph semGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
+            Collection<IndexedWord> vertices = semGraph.vertexSet();
+
+            for (IndexedWord vertex : vertices) {
+                List<Pair<GrammaticalRelation,IndexedWord>> children = semGraph.childPairs(vertex);
+                // when should be easy:
+                // case 1: when is
+                //    when <-advmod- be(root)
+                if (vertex.lemma().equalsIgnoreCase("be")) {
+                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
+                        if (child.first.getShortName().equalsIgnoreCase("advmod") && child.second.lemma().equalsIgnoreCase("when")) {
+                            response.add(MessageIntent.QUERY_WHEN);
+                        }
+                    }
+                }
+
+                // case 2: what time:
+                //    what <-det- time
+                if (vertex.lemma().equalsIgnoreCase("time")) {
+                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
+                        if (child.first.getShortName().equalsIgnoreCase("det") && child.second.lemma().equalsIgnoreCase("what")) {
+                            response.add(MessageIntent.QUERY_WHEN);
+                        }
+                    }
+                }
+
+
+                // check for a reschedule or a not make it request
+                //   ?? -cop-> be
+                //      -neg-> ??
+                //   be -advmod-> there
+                //      -neg-> ??
+                //   [make,come] -neg-> ??
+
+                boolean foundCop = false;
+                boolean foundNeg = false;
+                boolean foundBeAdvmod = false;
+
+                String[] acceptableNegatablesArr = {"make","come"};
+                Set<String> acceptableNegatables= new HashSet<>(Arrays.asList(acceptableNegatablesArr));
+
+                for (Pair<GrammaticalRelation,IndexedWord> child : children) {
+                    // covers   -neg-> ??
+                    if (child.first.getShortName().equalsIgnoreCase("neg")) {
+                        if (acceptableNegatables.contains(vertex.lemma().toLowerCase())) {
+                            // covers [make,com] -neg-> ??
+                            response.add(MessageIntent.APPOINTMENT_INVALID);
+                            break;
+                        } else {
+                            foundNeg = true;
+                        }
+                    // covers   -cop-> be
+                    } else if (child.first.getShortName().equalsIgnoreCase("cop") && child.second.lemma().equalsIgnoreCase("be")) {
+                        foundCop = true;
+                    // covers   be -advmod-> there
+                    } else if (vertex.lemma().equalsIgnoreCase("be") &&
+                            child.first.getShortName().equalsIgnoreCase("advmod") &&
+                            child.second.lemma().equalsIgnoreCase("there")) {
+                        foundBeAdvmod = true;
+                    }
+
+                    // which conditions have we filled?
+                    if ((foundCop && foundNeg) ||
+                            (foundBeAdvmod && foundNeg)) {
+                        response.add(MessageIntent.APPOINTMENT_INVALID);
+                        break;
+                    }
+                }
+
+                // handle the exact words reschedule and cancel
+                if (vertex.lemma().equalsIgnoreCase("cancel")) {
+                    response.add(MessageIntent.CANCEL);
+                } else if (vertex.lemma().equalsIgnoreCase("reschedule")) {
+                    response.add(MessageIntent.REQUEST_RESCHEDULE);
+                }
+            }
+
+            // the acceptable nouns upon which an appointment can be rescheduled
+            String[] acceptableReschedulesArr = {"day","time","week"};
+            Set<String> acceptableRechedules = new HashSet<>(Arrays.asList(acceptableReschedulesArr));
+
+            // look only over roots
+            // find some root -> [day,time,week] -> [other,another]
+            boolean done = false;
+            for (IndexedWord root : semGraph.getRoots()) {
+                for (Pair<GrammaticalRelation, IndexedWord> child : semGraph.childPairs(root)) {
+                    if (acceptableRechedules.contains(child.second.lemma().toLowerCase())) {
+                        for (Pair<GrammaticalRelation, IndexedWord> grandchild : semGraph.childPairs(child.second)) {
+                            if (grandchild.second.lemma().equalsIgnoreCase("other") || grandchild.second.lemma().equalsIgnoreCase("another")) {
+                                response.add(MessageIntent.REQUEST_RESCHEDULE);
+                                done = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (done) break;
+                }
+                if (done) break;
+            }
+        }
+
+
+
+
+        // check if they (also) asked where
+        if (askedWhere(annotation)) {
+            response.add(MessageIntent.QUERY_WHERE);
+        }
+
+        if (response.size() == 0) {
+            response = findThanks(annotation);
+        }
+
+        return response;
+    }
+
+    /**
+     * Looks for the word thank or thanks.
+     * @param annotation the sentence to extract from
+     * @return null or the "thanks" intent in a lost be itself
+     */
+    private List<MessageIntent> updateForArchived(Annotation annotation) {
+        return findThanks(annotation);
+    }
+
+    /**
+     * Looks for the word thank or thanks.
+     * @param annotation the sentence to extract from
+     * @return null or the "thanks" intent in a lost be itself
+     */
+    private List<MessageIntent> findThanks(Annotation annotation) {
+        Collection<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+
+        MessageIntent[] arr = {MessageIntent.THANKS};
+        List<MessageIntent> ret = new ArrayList<>(Arrays.asList(arr));
+
+        for (CoreMap sentence : sentences) {
+            SemanticGraph semGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
+
+            for (IndexedWord vertex : semGraph.vertexSet()) {
+                if (vertex.lemma().equalsIgnoreCase("thank")) {
+                    return ret;
+                }
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    /**
      * Searched the annotation for an affirmative of negative response
      * @param annotation the annotated sentence to search
      * @return either MessageIntent.AFFIRMATIVE of MessageIntent.NEGATIVE
@@ -212,14 +370,26 @@ public class InformationExtractor {
             // loop over the vertices in the sentence
             Set<IndexedWord> vertices = semGraph.vertexSet();
             for (IndexedWord vertex : vertices) {
+                List<Pair<GrammaticalRelation, IndexedWord>> parents = semGraph.parentPairs(vertex);
                 // if the lemma is "where"
                 if (vertex.lemma().equalsIgnoreCase("where")) {
                     // look through the parents
-                    List<Pair<GrammaticalRelation, IndexedWord>> parents = semGraph.parentPairs(vertex);
                     for (Pair<GrammaticalRelation, IndexedWord> parent : parents) {
                         // if the relation is advmod and the parent is some form of be, then they asked where
                         if (parent.second.lemma().equalsIgnoreCase("be") && parent.first.getShortName().equalsIgnoreCase("advmod")) {
                             return true;
+                        }
+                    }
+                }
+
+                if (vertex.lemma().equalsIgnoreCase("room")) {
+                    for (Pair<GrammaticalRelation, IndexedWord> parent : parents) {
+                        // if the relation is advmod and the parent is some form of be, then they asked where
+                        if (parent.first.getShortName().equalsIgnoreCase("det")) {
+                            String lemma = parent.second.lemma();
+                            if (lemma.equalsIgnoreCase("what") || lemma.equalsIgnoreCase("which")) {
+                                return true;
+                            }
                         }
                     }
                 }

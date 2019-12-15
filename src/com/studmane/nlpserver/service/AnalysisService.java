@@ -74,14 +74,15 @@ public class AnalysisService {
         try {
             StringBuilder sb = new StringBuilder();
             for (MessageIntent intent : messageIntents) {
+                sb.append(" ");
                 sb.append(dm.reply(intent, conv));
             }
             resp.setMessage(sb.toString());
-        } catch (IOException ex) {
-            // todo deal with this
-            assert false;
         } catch (IllegalStateException ex) {
             // also deal with this
+            assert false;
+        } catch (IOException ex) {
+            // todo deal with this
             assert false;
         }
 

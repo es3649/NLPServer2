@@ -54,8 +54,11 @@ public class DiscourseManager {
             // resolve that
             return resolveProposal(intent, conv);
         case Conversation.STATE_ARCHIVED:
-            // TODO
-            assert false;
+            if (intent == MessageIntent.THANKS) {
+                return WordLattice.fromFile("yourewelcome.lat").generate(conv.getAppointmentTime(), conv.getName());
+            } else {
+                return null;
+            }
         case Conversation.STATE_RESCHEDULING:
             // then we are in the process of rescheduling, deal with that
             return reschedule(intent, conv);
@@ -63,7 +66,7 @@ public class DiscourseManager {
             // We received a message after the appt was set
             return set(intent, conv);
         default:
-            assert false;
+            throw new IllegalStateException(String.format("Got state %s", conv.getState()));
         }
         
         return null;

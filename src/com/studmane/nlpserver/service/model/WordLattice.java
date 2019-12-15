@@ -3,6 +3,7 @@ package com.studmane.nlpserver.service.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -91,10 +92,17 @@ public class WordLattice {
             sb.append(cur.v);
         }
 
-        String resutRaw = sb.toString();
+        String resultRaw = sb.toString();
         // TODO this needs to be formatted using the provided args
         // TODO also be sure that the first character is capitalized
-        return resutRaw;
+        String fname = name.split(" ")[0];
+        resultRaw = resultRaw.replace("<f-name>",fname);
+        resultRaw = resultRaw.replace("<f-date>","");
+        SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
+        resultRaw = resultRaw.replace("<f-date-relative>",sdfTime.format(date.getTime()));
+        SimpleDateFormat sdfDate = new SimpleDateFormat("MMM d");
+        resultRaw = resultRaw.replace("<f-time>",sdfDate.format(date.getTime()));
+        return resultRaw;
     }
 
     /**
