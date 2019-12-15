@@ -57,7 +57,7 @@
             "w":[1]
         },
         "12":{
-            "v":" <f-date-relative> at <f-time>",
+            "v":"<f-date-relative> at <f-time>",
             "to":["13"],
             "w":[1]
         },

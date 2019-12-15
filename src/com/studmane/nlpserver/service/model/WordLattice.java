@@ -4,23 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.logging.Level;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.studmane.nlpserver.Server;
+import edu.stanford.nlp.util.StringUtils;
 
 public class WordLattice {
     private String root;
     private Map<String, LatticeNode> lattice;
 
-    private static final String LATTICE_LOC = "/lattices/";
+    private static final String LATTICE_LOC = "./NLPServer2/libs/lattices/";
     private static final Random generator = new Random(System.currentTimeMillis());
 
     private WordLattice(String latticeData) {}
@@ -77,7 +75,7 @@ public class WordLattice {
             // do a manual multinomial distribution (this is why things really need to be normalized)
             for (int i = 0; i < cur.to.size(); i++) {
                 // System.out.println(cur.v);
-                // dinishish rand by the weight
+                // diminish rand by the weight
                 rand -= cur.w.get(i);
 
                 // if rand is totally diminished, then we have what we are looking for
@@ -97,12 +95,27 @@ public class WordLattice {
         // TODO also be sure that the first character is capitalized
         String fname = name.split(" ")[0];
         resultRaw = resultRaw.replace("<f-name>",fname);
-        resultRaw = resultRaw.replace("<f-date>","");
-        SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
-        resultRaw = resultRaw.replace("<f-date-relative>",sdfTime.format(date.getTime()));
         SimpleDateFormat sdfDate = new SimpleDateFormat("MMM d");
-        resultRaw = resultRaw.replace("<f-time>",sdfDate.format(date.getTime()));
-        return resultRaw;
+        resultRaw = resultRaw.replace("<f-date>",sdfDate.format(date.getTime()));
+        SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
+        resultRaw = resultRaw.replace("<f-time>",sdfTime.format(date.getTime()));
+        resultRaw = resultRaw.replace("<f-date-relative>",relativize(date));
+        return StringUtils.capitalize(resultRaw);
+    }
+
+    private String relativize(Calendar date) {
+        String prefix;
+        long daysBetween = ChronoUnit.DAYS.between(date.toInstant(), Calendar.getInstance().toInstant());
+        if (daysBetween > 7 && daysBetween < 14) {
+            prefix = "next";
+        } else if (daysBetween <= 7){
+            prefix = "this";
+        } else {
+            SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
+            return sdfTime.format(date.getTime());
+        }
+
+        return String.format("%s %s", prefix, date.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault()));
     }
 
     /**

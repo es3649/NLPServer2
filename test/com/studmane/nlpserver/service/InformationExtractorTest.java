@@ -2,8 +2,6 @@ package com.studmane.nlpserver.service;
 
 import edu.stanford.nlp.pipeline.Annotation;
 import org.junit.Test;
-import com.studmane.nlpserver.service.InformationExtractor;
-import com.studmane.nlpserver.service.AnalysisService;
 
 import static org.junit.Assert.*;
 

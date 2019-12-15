@@ -7,15 +7,13 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.Calendar;
 
-import com.studmane.nlpserver.service.model.Conversation;
-import com.studmane.nlpserver.service.model.WordLattice;
-
 public class WordLatticeTest {
     public WordLatticeTest () {}
 
     @Test
     public void TestWordLatticeLoader() throws IOException {
-        WordLattice wl =WordLattice.fromFile("propose.lat");
+        System.out.println(System.getenv("PWD"));
+        WordLattice wl = WordLattice.fromFile("propose.lat");
 
 
     }
@@ -24,7 +22,7 @@ public class WordLatticeTest {
     public void TestWordLatticeGenerator() throws IOException {
         Calendar c = Calendar.getInstance();
 
-        String[] files = {"apptset.lat", "propose.lat", "signoff.lat", "correction.lat", "where.lat", "reschedule.lat", "when.lat","yourewelcome.lat"};
+        String[] files = {"apptset.lat", "propose.lat", /*"signoff.lat",*/ "correction.lat", "where.lat", "reschedule.lat", /*"when.lat",*/ "yourewelcome.lat"};
         // String[] files = {"propose.lat"};
 
         for (String filename : files) {

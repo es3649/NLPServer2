@@ -2,3 +2,4 @@ out
 .idea
 libs/jars
 **/.DS_Store
+bin
