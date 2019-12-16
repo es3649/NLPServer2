@@ -3,3 +3,5 @@ out
 libs/jars
 **/.DS_Store
 bin
+credentials.json
+lig.keystore

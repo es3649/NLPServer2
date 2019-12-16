@@ -97,7 +97,7 @@ public class WordLattice {
         resultRaw = resultRaw.replace("<f-name>",fname);
         SimpleDateFormat sdfDate = new SimpleDateFormat("MMM d");
         resultRaw = resultRaw.replace("<f-date>",sdfDate.format(date.getTime()));
-        SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
+        SimpleDateFormat sdfTime = new SimpleDateFormat("K:mm");
         resultRaw = resultRaw.replace("<f-time>",sdfTime.format(date.getTime()));
         resultRaw = resultRaw.replace("<f-date-relative>",relativize(date));
         return StringUtils.capitalize(resultRaw);

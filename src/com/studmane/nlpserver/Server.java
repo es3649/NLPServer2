@@ -64,7 +64,7 @@ public class Server {
             Date date = new Date();
             Timestamp ts = new Timestamp(date.getTime());
 
-            String filename = "log/server"+ sdf.format(ts) +".txt";
+            String filename = "./NLPServer2/log/server"+ sdf.format(ts) +".txt";
             new File(filename).createNewFile();
             
             FileHandler fileHandler = new FileHandler(filename);

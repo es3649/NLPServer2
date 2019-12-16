@@ -21,7 +21,7 @@ import com.studmane.nlpserver.Server;
 public class FileHandler implements HttpHandler {
     public FileHandler() {};
 
-    private static final String WEB_FILE_PREFIX = "/web/";
+    private static final String WEB_FILE_PREFIX = "./NLPServer2/libs/web/";
     private static final String HOME_PAGE = "index.html";
 
     /**

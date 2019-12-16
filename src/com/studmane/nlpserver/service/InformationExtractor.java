@@ -1,7 +1,9 @@
 package com.studmane.nlpserver.service;
 
 import java.util.*;
+import java.util.logging.Level;
 
+import com.studmane.nlpserver.Server;
 import com.studmane.nlpserver.service.exception.BadRequestException;
 import com.studmane.nlpserver.service.model.Conversation;
 import com.studmane.nlpserver.service.model.MessageIntent;
@@ -78,16 +80,17 @@ public class InformationExtractor {
         //    Tree semanticGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
             SemanticGraph semGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
 
-            // get the roots
-            Collection<IndexedWord> roots = semGraph.getRoots();
-            for (IndexedWord word : roots) {
+            // get the vertices
+            for (IndexedWord word : semGraph.vertexSet()) {
                 // check for lemmas we want
                 List<Pair<GrammaticalRelation, IndexedWord>> edges = semGraph.childPairs(word);
                 switch (word.lemma()) {
                     case "schedule":
+                        // todo assert that is a verb
                     case "meet":
                         // we can check further down the graph, but we probably good
                         returnList.add(MessageIntent.SCHEDULE);
+                        Server.logger.log(Level.INFO, "Found SCHEDULE intent for 'meet' or 'schedule'");
                         break;
                     case "see":
                         // should probably check further down the map:
@@ -95,6 +98,7 @@ public class InformationExtractor {
                         for (Pair<GrammaticalRelation, IndexedWord> edge : edges) {
                             if (edge.second.value().equalsIgnoreCase("bishop")){
                                 returnList.add(MessageIntent.SCHEDULE);
+                                Server.logger.log(Level.INFO, "Found SCHEDULE intent for 'see bishop'");
                             }
                         }
                         break;
@@ -103,12 +107,14 @@ public class InformationExtractor {
                         for (Pair<GrammaticalRelation, IndexedWord> edge : edges) {
                             if (edge.second.value().equalsIgnoreCase("up")
                                     && edge.first.getShortName().equalsIgnoreCase("compound:prt")) {
+                                Server.logger.log(Level.INFO, "Found SCHEDULE intent for 'set up'");
                                 returnList.add(MessageIntent.SCHEDULE);
                             }
                         }
 
                     default:
                         // in all cases consider checking for dobj Bishop or dobj appointment or interview
+//                        Server.logger.log(Level.INFO, "SCHEDULE intent not found");
                 }
 
                 // TODO come back to dates later.
@@ -122,6 +128,10 @@ public class InformationExtractor {
 //                }
 
             }
+        }
+
+        if (returnList.size() == 0) {
+            Server.logger.log(Level.INFO, "No intent found");
         }
 
         return returnList;
@@ -146,6 +156,10 @@ public class InformationExtractor {
         }
 
         // TODO later mess with dates and see if they suggested something or if they blocked out a time
+        if (r.size() == 0) {
+            Server.logger.log(Level.INFO, "No intent found");
+        }
+
         return r;
     }
 
@@ -155,7 +169,7 @@ public class InformationExtractor {
      * @param conversation the conversation of which this message is a part
      * @return a list of intents encountered
      */
-    private List<MessageIntent> updateForApptSet(Annotation annotation, Conversation conversation) {
+    List<MessageIntent> updateForApptSet(Annotation annotation, Conversation conversation) {
         List<MessageIntent> response = new ArrayList<>();
 
         List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
@@ -169,11 +183,12 @@ public class InformationExtractor {
                 // case 1: when is
                 //    when <-advmod- be(root)
                 if (vertex.lemma().equalsIgnoreCase("be")) {
-                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
-                        if (child.first.getShortName().equalsIgnoreCase("advmod") && child.second.lemma().equalsIgnoreCase("when")) {
+//                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
+//                        if (child.first.getShortName().equalsIgnoreCase("advmod") && child.second.lemma().equalsIgnoreCase("when")) {
                             response.add(MessageIntent.QUERY_WHEN);
-                        }
-                    }
+                            Server.logger.log(Level.INFO, "Found QUERY_WHERE intent for 'where be'");
+//                        }
+//                    }
                 }
 
                 // case 2: what time:
@@ -182,6 +197,7 @@ public class InformationExtractor {
                     for (Pair<GrammaticalRelation, IndexedWord> child : children) {
                         if (child.first.getShortName().equalsIgnoreCase("det") && child.second.lemma().equalsIgnoreCase("what")) {
                             response.add(MessageIntent.QUERY_WHEN);
+                            Server.logger.log(Level.INFO, "Found QUERY_WHERE intent for 'what time'");
                         }
                     }
                 }
@@ -190,7 +206,7 @@ public class InformationExtractor {
                 // check for a reschedule or a not make it request
                 //   ?? -cop-> be
                 //      -neg-> ??
-                //   be -advmod-> there
+                //   be -advmod-> [there,here]
                 //      -neg-> ??
                 //   [make,come] -neg-> ??
 
@@ -207,6 +223,7 @@ public class InformationExtractor {
                         if (acceptableNegatables.contains(vertex.lemma().toLowerCase())) {
                             // covers [make,com] -neg-> ??
                             response.add(MessageIntent.APPOINTMENT_INVALID);
+                            Server.logger.log(Level.INFO, "Found APPOINTMENT_INVALID intent for <neg> and '[meet,come]'");
                             break;
                         } else {
                             foundNeg = true;
@@ -226,15 +243,18 @@ public class InformationExtractor {
                     if ((foundCop && foundNeg) ||
                             (foundBeAdvmod && foundNeg)) {
                         response.add(MessageIntent.APPOINTMENT_INVALID);
+                        Server.logger.log(Level.INFO, "Found APPOINTMENT_INVALID intent");
                         break;
                     }
                 }
 
                 // handle the exact words reschedule and cancel
                 if (vertex.lemma().equalsIgnoreCase("cancel")) {
+                    Server.logger.log(Level.INFO, "Found CANCEL intent");
                     response.add(MessageIntent.CANCEL);
                 } else if (vertex.lemma().equalsIgnoreCase("reschedule")) {
                     response.add(MessageIntent.REQUEST_RESCHEDULE);
+                    Server.logger.log(Level.INFO, "Found REQUEST_RESCHEDULE intent");
                 }
             }
 
@@ -251,6 +271,7 @@ public class InformationExtractor {
                         for (Pair<GrammaticalRelation, IndexedWord> grandchild : semGraph.childPairs(child.second)) {
                             if (grandchild.second.lemma().equalsIgnoreCase("other") || grandchild.second.lemma().equalsIgnoreCase("another")) {
                                 response.add(MessageIntent.REQUEST_RESCHEDULE);
+                                Server.logger.log(Level.INFO, "Found REQUEST_RESCHEDULE intent for '[other,another]' and '[day,time,week]'");
                                 done = true;
                                 break;
                             }
@@ -272,6 +293,10 @@ public class InformationExtractor {
 
         if (response.size() == 0) {
             response = findThanks(annotation);
+        }
+
+        if (response.size() == 0) {
+            Server.logger.log(Level.INFO, "No intent found");
         }
 
         return response;
@@ -301,11 +326,14 @@ public class InformationExtractor {
             SemanticGraph semGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
 
             for (IndexedWord vertex : semGraph.vertexSet()) {
-                if (vertex.lemma().equalsIgnoreCase("thank")) {
+//                Server.logger.log(Level.FINEST, String.format("examining lemma '%s'", vertex.lemma()));
+                if (vertex.lemma().equalsIgnoreCase("thank") || vertex.lemma().equalsIgnoreCase("thanks")) {
+                    Server.logger.log(Level.INFO, "Found THANKS intent");
                     return ret;
                 }
             }
         }
+        Server.logger.log(Level.INFO, "No intent found");
         return new ArrayList<>();
     }
 
@@ -332,9 +360,11 @@ public class InformationExtractor {
             for (IndexedWord root : semGraph.getRoots()) {
                 if (affirmativeValues.contains(root.lemma().toLowerCase())) {
                     // if it's positive, return it
+                    Server.logger.log(Level.INFO, "Found AFFIRMATIVE intent");
                     return MessageIntent.AFFIRMATIVE;
                 } else if (negativeValues.contains(root.lemma().toLowerCase())) {
                     // if it's negative, return it
+                    Server.logger.log(Level.INFO, "Found AFFIRMATIVE intent");
                     return MessageIntent.NEGATIVE;
                 }
 
@@ -344,15 +374,17 @@ public class InformationExtractor {
                 for (Pair<GrammaticalRelation, IndexedWord> edge : edges) {
                     if (edge.first.getShortName().equalsIgnoreCase("discourse")) {
                         if (affirmativeValues.contains(edge.second.lemma().toLowerCase())) {
+                            Server.logger.log(Level.INFO, "Found AFFIRMATIVE intent");
                             return MessageIntent.AFFIRMATIVE;
                         } else if (negativeValues.contains(edge.second.lemma().toLowerCase())) {
+                            Server.logger.log(Level.INFO, "Found NEGATIVE intent");
                             return MessageIntent.NEGATIVE;
                         }
                     }
                 }
             }
         }
-
+        Server.logger.log(Level.INFO, "No intent found");
         return MessageIntent.OTHER;
     }
 
@@ -372,23 +404,26 @@ public class InformationExtractor {
             Set<IndexedWord> vertices = semGraph.vertexSet();
             for (IndexedWord vertex : vertices) {
                 List<Pair<GrammaticalRelation, IndexedWord>> parents = semGraph.parentPairs(vertex);
+                List<Pair<GrammaticalRelation, IndexedWord>> children = semGraph.childPairs(vertex);
                 // if the lemma is "where"
                 if (vertex.lemma().equalsIgnoreCase("where")) {
                     // look through the parents
-                    for (Pair<GrammaticalRelation, IndexedWord> parent : parents) {
-                        // if the relation is advmod and the parent is some form of be, then they asked where
-                        if (parent.second.lemma().equalsIgnoreCase("be") && parent.first.getShortName().equalsIgnoreCase("advmod")) {
+//                    for (Pair<GrammaticalRelation, IndexedWord> parent : parents) {
+//                        // if the relation is advmod and the parent is some form of be, then they asked where
+//                        if (parent.second.lemma().equalsIgnoreCase("be") && parent.first.getShortName().equalsIgnoreCase("advmod")) {
+                            Server.logger.log(Level.INFO, "Found QUERY_WHERE intent for 'where be'");
                             return true;
-                        }
-                    }
+//                        }
+//                    }
                 }
 
                 if (vertex.lemma().equalsIgnoreCase("room")) {
-                    for (Pair<GrammaticalRelation, IndexedWord> parent : parents) {
+                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
                         // if the relation is advmod and the parent is some form of be, then they asked where
-                        if (parent.first.getShortName().equalsIgnoreCase("det")) {
-                            String lemma = parent.second.lemma();
+                        if (child.first.getShortName().equalsIgnoreCase("det")) {
+                            String lemma = child.second.lemma();
                             if (lemma.equalsIgnoreCase("what") || lemma.equalsIgnoreCase("which")) {
+                                Server.logger.log(Level.INFO, "Found QUERY_WHERE intent for '[what,which] room'");
                                 return true;
                             }
                         }
@@ -397,6 +432,7 @@ public class InformationExtractor {
 
             }
         }
+        Server.logger.log(Level.INFO, "No intent found");
         return false;
     }
 
