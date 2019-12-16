@@ -68,7 +68,7 @@ public class InformationExtractor {
      * @param conversation the conversation to update
      * @return a list of MessageIntents which describe the intent of this message
      */
-    private List<MessageIntent> updateForProcessing(Annotation annotation, Conversation conversation) {
+    List<MessageIntent> updateForProcessing(Annotation annotation, Conversation conversation) {
         // do they actually want an appointment, or something else?
         List<MessageIntent> returnList = new ArrayList<>();
 
@@ -134,7 +134,7 @@ public class InformationExtractor {
      * @param conversation the related conversation object
      * @return a list of intents parsed from this annotation
      */
-    private List<MessageIntent> updateForApptProposed(Annotation annotation, Conversation conversation) {
+    List<MessageIntent> updateForApptProposed(Annotation annotation, Conversation conversation) {
         // look for a positive or negative
         MessageIntent m = findAffirmativeOrNegative(annotation);
         List<MessageIntent> r = new ArrayList<>();
@@ -217,7 +217,8 @@ public class InformationExtractor {
                     // covers   be -advmod-> there
                     } else if (vertex.lemma().equalsIgnoreCase("be") &&
                             child.first.getShortName().equalsIgnoreCase("advmod") &&
-                            child.second.lemma().equalsIgnoreCase("there")) {
+                            (child.second.lemma().equalsIgnoreCase("there") ||
+                                    child.second.lemma().equalsIgnoreCase("here"))) {
                         foundBeAdvmod = true;
                     }
 
@@ -290,7 +291,7 @@ public class InformationExtractor {
      * @param annotation the sentence to extract from
      * @return null or the "thanks" intent in a lost be itself
      */
-    private List<MessageIntent> findThanks(Annotation annotation) {
+    List<MessageIntent> findThanks(Annotation annotation) {
         Collection<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
 
         MessageIntent[] arr = {MessageIntent.THANKS};
