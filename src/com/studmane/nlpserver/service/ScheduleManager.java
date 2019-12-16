@@ -2,7 +2,9 @@ package com.studmane.nlpserver.service;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.Level;
 
+import com.studmane.nlpserver.Server;
 import com.studmane.nlpserver.service.model.Conversation;
 
 public class ScheduleManager {
@@ -17,7 +19,9 @@ public class ScheduleManager {
      * @param conv the conversation from which time will be blocked out
      */
     public void invalidateBlock(Calendar date, Conversation conv) {
-        assert false;
+        Server.logger.log(Level.WARNING, "Call to unimplemented invalidateBlock");
+        conv.addUnavailability(new Conversation.Unavailability(date, date));
+//        assert false;
     }
 
     /**
@@ -35,7 +39,8 @@ public class ScheduleManager {
      * @param date the date and time of the appointment to remove
      */
     public void removeAppt(Calendar date) {
-        assert false;
+        Server.logger.log(Level.WARNING, "Call to unimplemented removeAppt");
+//        assert false;
     }
 
     /**
@@ -72,8 +77,11 @@ public class ScheduleManager {
      * @return the best available appointment slot
      */
     public Calendar getApptSlot() {
-        assert false;
-        return null;
+        // TODO this is a temporary fix...
+        Server.logger.log(Level.WARNING, "Call to unimplemented getApptSlot");
+        return Calendar.getInstance();
+//        assert false;
+//        return null;
     }
 
     /**

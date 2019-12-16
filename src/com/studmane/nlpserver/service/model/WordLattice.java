@@ -18,7 +18,7 @@ public class WordLattice {
     private String root;
     private Map<String, LatticeNode> lattice;
 
-    private static final String LATTICE_LOC = "./NLPServer2/libs/lattices/";
+    private static final String LATTICE_LOC = "./libs/lattices/";
     private static final Random generator = new Random(System.currentTimeMillis());
 
     private WordLattice(String latticeData) {}
@@ -30,6 +30,7 @@ public class WordLattice {
      */
     public static WordLattice fromFile(String filename) 
             throws IOException {
+        Server.logger.log(Level.INFO, String.format("Generating from %s", filename));
         // read teh bytes from the file
         File file = new File(LATTICE_LOC + filename);
         String json = new String(Files.readAllBytes(file.toPath()));

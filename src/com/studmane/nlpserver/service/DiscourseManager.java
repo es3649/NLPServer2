@@ -142,7 +142,7 @@ public class DiscourseManager {
      * 
      * Handle messages coming in after an appointment is set
      * @param intent the generalized intent of the message
-     * @param conv 
+     * @param conv the conversation object at this state
      * @return
      */
     private String set(MessageIntent intent, Conversation conv) 
@@ -211,7 +211,6 @@ public class DiscourseManager {
             // signoff
             return WordLattice.fromFile("yourewelcome.lat")
                 .generate(conv.getAppointmentTime(), conv.getName());
-
         default:
             Server.logger.log(Level.SEVERE, String.format("Got signal %s", intent));
             throw new IllegalStateException("Reached an illegal action out of S3");

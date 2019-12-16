@@ -63,7 +63,12 @@ public class Conversation {
      * This class is essentially a c++ pair with hashing. 
      * It holds 2 Calendar objects and represents a range
      */
-    public class Unavailability {
+    public static class Unavailability {
+        public Unavailability(Calendar d1, Calendar d2) {
+            begin = d1;
+            end = d2;
+        }
+
         public Calendar begin;
         public Calendar end;
 
