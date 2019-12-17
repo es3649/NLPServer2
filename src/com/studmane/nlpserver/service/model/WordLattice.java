@@ -18,7 +18,7 @@ public class WordLattice {
     private String root;
     private Map<String, LatticeNode> lattice;
 
-    private static final String LATTICE_LOC = "./NLPServer2/libs/lattices/";
+    private static final String LATTICE_LOC = "./libs/lattices/";
     private static final Random generator = new Random(System.currentTimeMillis());
 
     private WordLattice(String latticeData) {}
