@@ -1,0 +1,19 @@
+{
+    "message":"Hey, I'm actually going out of town for work this weekend. I won't be able to make the appointment.",
+    "name":"Jane Doe",
+    "number":"18015551234",
+    "conversation":{
+        "ID":"reschedule-appointment",
+        "name":"Jane Doe",
+        "purpose":"Interview",
+        "appointmentTime":{
+            "year":2019,
+            "month":11,
+            "dayOfMonth":15,
+            "hourOfDay":18,
+            "minute":30,
+            "second":0
+        },
+        "state":"Appt set"
+    }
+}

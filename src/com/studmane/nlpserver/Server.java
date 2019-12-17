@@ -28,15 +28,12 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
-
-// import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 
 import com.studmane.nlpserver.handler.*;
-import com.studmane.nlpserver.Password;
-import com.studmane.nlpserver.PasswordProvider;
+
 
 
 /** class Server

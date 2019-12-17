@@ -1,0 +1,19 @@
+{
+    "message":"Hey, what time is my appointment again?",
+    "name":"Jane Doe",
+    "number":"18015551234",
+    "conversation":{
+        "ID":"double-check-time",
+        "name":"Jane Doe",
+        "purpose":"Interview",
+        "appointmentTime":{
+            "year":2019,
+            "month":11,
+            "dayOfMonth":15,
+            "hourOfDay":18,
+            "minute":30,
+            "second":0
+        },
+        "state":"Appt set"
+    }
+}
