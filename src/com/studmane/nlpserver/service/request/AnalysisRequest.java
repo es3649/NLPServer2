@@ -13,7 +13,7 @@ import com.studmane.nlpserver.service.response.MessageResponse;
 import com.studmane.nlpserver.service.response.Serializable;
 
 public class AnalysisRequest implements Serializable {
-    AnalysisRequest() {}
+    private AnalysisRequest() {}
 
     private String message;
     private String name;
@@ -27,7 +27,7 @@ public class AnalysisRequest implements Serializable {
      * @throws BadRequestException if the json is invalid
      */
     public static AnalysisRequest fromJson(String requestJson) throws BadRequestException {
-        AnalysisRequest req = new AnalysisRequest();
+        AnalysisRequest req;
         Gson gson = new Gson();
         TypeToken<AnalysisRequest> typTok = new TypeToken<AnalysisRequest>() {};
         try {
