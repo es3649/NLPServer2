@@ -65,6 +65,8 @@ public class AnalysisService {
             conv = new Conversation(req.getName());
         }
 
+        Server.logger.log(Level.INFO, String.format("Sentence is: %s", req.getMessage()));
+
         // run the information extractor with the conversation and the annotation
         // this updates the conversation in place
         InformationExtractor ie = new InformationExtractor();

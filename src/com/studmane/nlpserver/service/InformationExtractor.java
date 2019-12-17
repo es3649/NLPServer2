@@ -182,9 +182,9 @@ public class InformationExtractor {
                 // when should be easy:
                 // case 1: when is
                 //    when <-advmod- be(root)
-                if (vertex.lemma().equalsIgnoreCase("be")) {
-//                    for (Pair<GrammaticalRelation, IndexedWord> child : children) {
-//                        if (child.first.getShortName().equalsIgnoreCase("advmod") && child.second.lemma().equalsIgnoreCase("when")) {
+                if (vertex.lemma().equalsIgnoreCase("when")) {
+//                    for (Pair<GrammaticalRelation, IndexedWord> parent : semGraph.parentPairs(vertex)) {
+//                        if (parent.first.getShortName().equalsIgnoreCase("advmod") && parent.second.lemma().equalsIgnoreCase("be")) {
                             response.add(MessageIntent.QUERY_WHEN);
                             Server.logger.log(Level.INFO, "Found QUERY_WHERE intent for 'where be'");
 //                        }
